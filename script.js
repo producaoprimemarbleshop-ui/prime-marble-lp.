@@ -91,6 +91,7 @@ function renderElement(element, isMobile) {
 function renderText(element, geometry) {
   const text = document.createElement("div");
   text.className = "lp-el lp-text";
+  text.id = element.id;
   text.innerHTML = getTextHtml(element);
   applyGeometry(text, geometry);
   return text;
@@ -99,9 +100,9 @@ function renderText(element, geometry) {
 function getTextHtml(element) {
   if (element.id === "lp-pom-text-160") {
     return (
-      '<p style="line-height: 22px;">' +
-      '<span style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255); font-style: normal;">Onde estamos:</span><br>' +
-      '<span style="font-weight: 400; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255); font-style: normal;">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000, Brasil</span>' +
+      '<p style="line-height: 22px; white-space: nowrap;">' +
+      '<span style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255); font-style: normal;">Onde estamos: </span>' +
+      '<span style="font-weight: 400; font-family: Poppins; font-size: 15px; color: rgb(255, 255, 255); font-style: normal;">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000, Brasil</span>' +
       "</p>"
     );
   }
@@ -281,7 +282,8 @@ function getGeometry(element, isMobile) {
 function applyGeometry(node, geometry) {
   const left = geometry.offset?.left || 0;
   const top = geometry.offset?.top || 0;
-  const width = geometry.size?.width || 0;
+  const width =
+    node.id === "lp-pom-text-160" ? Math.max(geometry.size?.width || 0, 700) : geometry.size?.width || 0;
   const height = geometry.size?.height || 0;
   node.style.left = `${left}px`;
   node.style.top = `${top}px`;
