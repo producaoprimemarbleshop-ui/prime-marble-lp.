@@ -91,9 +91,30 @@ function renderElement(element, isMobile) {
 function renderText(element, geometry) {
   const text = document.createElement("div");
   text.className = "lp-el lp-text";
-  text.innerHTML = element.content?.text || "";
+  text.innerHTML = getTextHtml(element);
   applyGeometry(text, geometry);
   return text;
+}
+
+function getTextHtml(element) {
+  if (element.id === "lp-pom-text-160") {
+    return (
+      '<p style="line-height: 22px;">' +
+      '<span style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255); font-style: normal;">Onde estamos:</span><br>' +
+      '<span style="font-weight: 400; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255); font-style: normal;">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000, Brasil</span>' +
+      "</p>"
+    );
+  }
+
+  if (element.id === "lp-pom-text-204") {
+    return (
+      '<p style="line-height: 20px; text-align: center;">' +
+      '<span style="font-weight: 400; font-family: Poppins; font-size: 16px; color: rgb(0, 0, 0); font-style: normal;">2024 © Todos os direitos reservados. Desenvolvido por Prime Marble Shop</span>' +
+      "</p>"
+    );
+  }
+
+  return element.content?.text || "";
 }
 
 function renderImage(element, geometry) {
