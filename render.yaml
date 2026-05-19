@@ -3,3 +3,7 @@ services:
     name: prime-marble-shop-lp
     runtime: static
     staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /gerar_pdf_orcamento/*
+        destination: https://orcamento-t9w2.onrender.com/gerar_pdf_orcamento/*

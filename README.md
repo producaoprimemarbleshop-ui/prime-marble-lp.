@@ -19,3 +19,13 @@ Depois abra `http://localhost:4173`.
 5. Ajuste o DNS conforme o valor indicado pelo Render.
 
 O site mantem GTM `GTM-TQSTHBSN`, Clarity `qem0ys2f7n`, WhatsApp, Instagram e Google Maps da LP original.
+
+## Mascaras de URL no Render
+
+Para mascarar o orcamento gerado, adicione em **Redirects/Rewrites** do Static Site:
+
+- Action: `Rewrite`
+- Source: `/gerar_pdf_orcamento/*`
+- Destination: `https://orcamento-t9w2.onrender.com/gerar_pdf_orcamento/*`
+
+Com isso, um link como `/gerar_pdf_orcamento/O001030` mostra o conteudo real de `https://orcamento-t9w2.onrender.com/gerar_pdf_orcamento/O001030` sem trocar a URL visivel no navegador.
