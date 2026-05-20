@@ -274,13 +274,14 @@ function renderImageDesktop(element, geometry, bump) {
   const asset = element.content?.asset;
   if (!asset?.uuid || !asset?.name) return null;
   const img = document.createElement("img");
-  img.className = "lp-el lp-image";
   img.src = assetPath(asset);
   img.alt = asset.name.replace(/\.[^.]+$/, "").replace(/-/g, " ");
   img.loading = "eager";
   if (element.action?.url) {
     const a = document.createElement("a");
     a.className = "lp-el";
+    a.style.display = "block";
+    a.style.cursor = "pointer";
     a.href = element.action.url;
     a.target = element.action.target || "_self";
     if (a.target === "_blank") a.rel = "noopener";
@@ -291,6 +292,7 @@ function renderImageDesktop(element, geometry, bump) {
     a.appendChild(img);
     return a;
   }
+  img.className = "lp-el lp-image";
   applyGeometry(img, geometry, bump);
   return img;
 }
