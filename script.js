@@ -139,6 +139,10 @@ function renderTextMobile(element, geometry) {
   html = scaleFontsForMobile(html);
   div.innerHTML = html;
   div.style.width = "100%";
+  if (element.action?.url) {
+    div.style.cursor = "pointer";
+    div.addEventListener("click", () => window.open(element.action.url, element.action.target || "_blank"));
+  }
   return div;
 }
 
@@ -268,6 +272,10 @@ function renderTextDesktop(element, geometry, bump) {
   div.id = element.id;
   div.innerHTML = getTextHtml(element, false);
   applyGeometry(div, geometry, bump);
+  if (element.action?.url) {
+    div.style.cursor = "pointer";
+    div.addEventListener("click", () => window.open(element.action.url, element.action.target || "_blank"));
+  }
   return div;
 }
 
@@ -415,7 +423,11 @@ function getTextHtml(element, isMobile) {
 
   let html = element.content?.text || "";
   if (element.id === "lp-pom-text-137") {
-    html = '<p style="line-height: 26px; white-space: nowrap;"><span style="font-weight: 400; font-family: Poppins; font-size: 18px; color: rgb(255, 255, 255);">@primemarbleshop</span></p>';
+    if (isMobile) {
+      html = '<p style="line-height: 26px; text-align: center;"><img src="./68916c6e3a49f1d8/assets/c2229c80-606d-44dc-91e5-35da4ca51e5e/5aa2320c-instagram.png" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;display:inline" /><span style="font-weight: 400; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255);">@primemarbleshop</span></p>';
+    } else {
+      html = '<p style="line-height: 26px; white-space: nowrap;"><span style="font-weight: 400; font-family: Poppins; font-size: 18px; color: rgb(255, 255, 255);">@primemarbleshop</span></p>';
+    }
   }
   return html;
 }
