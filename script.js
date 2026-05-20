@@ -171,6 +171,14 @@ function renderImageMobile(element, geometry) {
   img.style.width = `${Math.min(w, 300)}px`;
   img.style.maxWidth = "100%";
   img.style.height = "auto";
+  if (element.action?.url) {
+    const a = document.createElement("a");
+    a.href = element.action.url;
+    a.target = element.action.target || "_self";
+    if (a.target === "_blank") a.rel = "noopener";
+    a.appendChild(img);
+    return a;
+  }
   return img;
 }
 
@@ -270,6 +278,19 @@ function renderImageDesktop(element, geometry, bump) {
   img.src = assetPath(asset);
   img.alt = asset.name.replace(/\.[^.]+$/, "").replace(/-/g, " ");
   img.loading = "eager";
+  if (element.action?.url) {
+    const a = document.createElement("a");
+    a.className = "lp-el";
+    a.href = element.action.url;
+    a.target = element.action.target || "_self";
+    if (a.target === "_blank") a.rel = "noopener";
+    applyGeometry(a, geometry, bump);
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "contain";
+    a.appendChild(img);
+    return a;
+  }
   applyGeometry(img, geometry, bump);
   return img;
 }
