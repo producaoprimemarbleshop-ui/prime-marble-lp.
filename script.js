@@ -18,7 +18,7 @@ const localCarouselAssets = [
 ].map(([uuid, file]) => `${ASSET_ROOT}/${uuid}/${file}`);
 
 let elements = [];
-let resizeTimer = 0;
+let lastBreakpoint = "";
 
 init();
 
@@ -27,10 +27,14 @@ async function init() {
     const response = await fetch(DATA_URL);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     elements = await response.json();
+    lastBreakpoint = window.matchMedia("(max-width: 767px)").matches ? "mobile" : "desktop";
     renderLandingPage();
     window.addEventListener("resize", () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(renderLandingPage, 120);
+      const current = window.matchMedia("(max-width: 767px)").matches ? "mobile" : "desktop";
+      if (current !== lastBreakpoint) {
+        lastBreakpoint = current;
+        renderLandingPage();
+      }
     });
   } catch (error) {
     document.getElementById("landing-page").innerHTML =
@@ -41,7 +45,7 @@ async function init() {
 
 function renderLandingPage() {
   const app = document.getElementById("landing-page");
-  const isMobile = window.matchMedia("(max-width: 767px)").matches;
+  const isMobile = lastBreakpoint === "mobile";
   const blocks = elements.filter((item) => item.type === "lp-pom-block");
   app.replaceChildren(...blocks.map((block) => renderBlock(block, isMobile)));
   startCarousel();
@@ -80,7 +84,7 @@ function renderElement(element, isMobile) {
   const geometry = getGeometry(element, isMobile);
   if (!geometry.visible) return null;
 
-  if (element.type === "lp-pom-text") return renderText(element, geometry);
+  if (element.type === "lp-pom-text") return renderText(element, geometry, isMobile);
   if (element.type === "lp-pom-image") return renderImage(element, geometry);
   if (element.type === "lp-pom-button") return renderButton(element, geometry);
   if (element.type === "lp-pom-box") return renderBox(element, geometry, isMobile);
@@ -88,17 +92,25 @@ function renderElement(element, isMobile) {
   return null;
 }
 
-function renderText(element, geometry) {
+function renderText(element, geometry, isMobile) {
   const text = document.createElement("div");
   text.className = "lp-el lp-text";
   text.id = element.id;
-  text.innerHTML = getTextHtml(element);
-  applyGeometry(text, geometry);
+  text.innerHTML = getTextHtml(element, isMobile);
+  applyGeometry(text, geometry, isMobile);
   return text;
 }
 
-function getTextHtml(element) {
+function getTextHtml(element, isMobile) {
   if (element.id === "lp-pom-text-160") {
+    if (isMobile) {
+      return (
+        '<p style="line-height: 20px; word-wrap: break-word; white-space: normal;">' +
+        '<span style="font-weight: 700; font-family: Poppins; font-size: 13px; color: rgb(255, 255, 255);">Onde estamos: </span>' +
+        '<span style="font-weight: 400; font-family: Poppins; font-size: 12px; color: rgb(255, 255, 255);">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000</span>' +
+        "</p>"
+      );
+    }
     return (
       '<p style="line-height: 22px; white-space: nowrap;">' +
       '<span style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255); font-style: normal;">Onde estamos: </span>' +
@@ -110,7 +122,7 @@ function getTextHtml(element) {
   if (element.id === "lp-pom-text-204") {
     return (
       '<p style="line-height: 20px; text-align: center;">' +
-      '<span style="font-weight: 400; font-family: Poppins; font-size: 16px; color: rgb(0, 0, 0); font-style: normal;">2024 © Todos os direitos reservados. Desenvolvido por Prime Marble Shop</span>' +
+      '<span style="font-weight: 400; font-family: Poppins; font-size: ' + (isMobile ? '12' : '16') + 'px; color: rgb(0, 0, 0); font-style: normal;">2024 © Todos os direitos reservados. Desenvolvido por Prime Marble Shop</span>' +
       "</p>"
     );
   }
@@ -214,6 +226,7 @@ function renderCarousel() {
     slide.className = "portfolio-slide";
     slide.dataset.index = String(index);
     slide.style.backgroundImage = `url("${src}")`;
+    slide.addEventListener("click", () => openLightbox(index));
     carousel.append(slide);
   });
   return carousel;
@@ -224,22 +237,126 @@ function startCarousel() {
   if (!slides.length) return;
 
   let active = 0;
+  const total = slides.length;
+
   const paint = () => {
     slides.forEach((slide, index) => {
       slide.className = "portfolio-slide";
-      const diff = (index - active + slides.length) % slides.length;
+      const diff = (index - active + total) % total;
       if (diff === 0) slide.classList.add("is-active");
-      if (diff === 1) slide.classList.add("is-next");
-      if (diff === 2) slide.classList.add("is-far-next");
-      if (diff === slides.length - 1) slide.classList.add("is-prev");
-      if (diff === slides.length - 2) slide.classList.add("is-far-prev");
+      else if (diff === 1) slide.classList.add("is-next");
+      else if (diff === 2) slide.classList.add("is-far-next");
+      else if (diff === total - 1) slide.classList.add("is-prev");
+      else if (diff === total - 2) slide.classList.add("is-far-prev");
     });
-    active = (active + 1) % slides.length;
+  };
+
+  const advance = () => {
+    active = (active + 1) % total;
+    paint();
   };
 
   paint();
   window.clearInterval(window.primeCarouselTimer);
-  window.primeCarouselTimer = window.setInterval(paint, 3000);
+  window.primeCarouselTimer = window.setInterval(advance, 3000);
+
+  const carousel = slides[0]?.parentElement;
+  if (!carousel) return;
+
+  let touchStartX = 0;
+  carousel.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    window.clearInterval(window.primeCarouselTimer);
+  }, { passive: true });
+
+  carousel.addEventListener("touchend", (e) => {
+    const diff = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(diff) > 40) {
+      if (diff < 0) active = (active + 1) % total;
+      else active = (active - 1 + total) % total;
+      paint();
+    }
+    window.primeCarouselTimer = window.setInterval(advance, 3000);
+  }, { passive: true });
+
+  slides.forEach((slide) => {
+    slide.addEventListener("click", (e) => {
+      const idx = Number(slide.dataset.index);
+      if (slide.classList.contains("is-prev") || slide.classList.contains("is-far-prev")) {
+        active = idx;
+        paint();
+        e.stopPropagation();
+      } else if (slide.classList.contains("is-next") || slide.classList.contains("is-far-next")) {
+        active = idx;
+        paint();
+        e.stopPropagation();
+      }
+    });
+  });
+}
+
+function openLightbox(index) {
+  if (document.querySelector(".lightbox-overlay")) return;
+
+  const overlay = document.createElement("div");
+  overlay.className = "lightbox-overlay";
+
+  const img = document.createElement("img");
+  img.className = "lightbox-img";
+  img.src = localCarouselAssets[index];
+  img.alt = `Projeto ${index + 1}`;
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "lightbox-close";
+  closeBtn.textContent = "✕";
+  closeBtn.setAttribute("aria-label", "Fechar");
+
+  const prevBtn = document.createElement("button");
+  prevBtn.className = "lightbox-nav lightbox-prev";
+  prevBtn.textContent = "‹";
+  prevBtn.setAttribute("aria-label", "Anterior");
+
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "lightbox-nav lightbox-next";
+  nextBtn.textContent = "›";
+  nextBtn.setAttribute("aria-label", "Próximo");
+
+  let current = index;
+  const total = localCarouselAssets.length;
+
+  const show = (i) => {
+    current = ((i % total) + total) % total;
+    img.src = localCarouselAssets[current];
+    img.alt = `Projeto ${current + 1}`;
+  };
+
+  prevBtn.addEventListener("click", (e) => { e.stopPropagation(); show(current - 1); });
+  nextBtn.addEventListener("click", (e) => { e.stopPropagation(); show(current + 1); });
+  closeBtn.addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+
+  document.addEventListener("keydown", function handler(e) {
+    if (!document.querySelector(".lightbox-overlay")) {
+      document.removeEventListener("keydown", handler);
+      return;
+    }
+    if (e.key === "Escape") overlay.remove();
+    if (e.key === "ArrowLeft") show(current - 1);
+    if (e.key === "ArrowRight") show(current + 1);
+  });
+
+  let lbTouchStartX = 0;
+  overlay.addEventListener("touchstart", (e) => { lbTouchStartX = e.touches[0].clientX; }, { passive: true });
+  overlay.addEventListener("touchend", (e) => {
+    const diff = e.changedTouches[0].clientX - lbTouchStartX;
+    if (Math.abs(diff) > 50) {
+      if (diff < 0) show(current + 1);
+      else show(current - 1);
+    }
+  }, { passive: true });
+
+  overlay.append(closeBtn, prevBtn, img, nextBtn);
+  document.body.append(overlay);
 }
 
 function getChildren(containerId) {
@@ -279,12 +396,16 @@ function getGeometry(element, isMobile) {
   };
 }
 
-function applyGeometry(node, geometry) {
+function applyGeometry(node, geometry, isMobile) {
   const left = geometry.offset?.left || 0;
   const top = geometry.offset?.top || 0;
-  const width =
-    node.id === "lp-pom-text-160" ? Math.max(geometry.size?.width || 0, 700) : geometry.size?.width || 0;
+  let width = geometry.size?.width || 0;
   const height = geometry.size?.height || 0;
+
+  if (node.id === "lp-pom-text-160") {
+    width = isMobile ? 300 : Math.max(width, 700);
+  }
+
   node.style.left = `${left}px`;
   node.style.top = `${top}px`;
   node.style.width = `${width}px`;
