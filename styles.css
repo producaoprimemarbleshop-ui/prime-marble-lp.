@@ -1,6 +1,5 @@
 :root {
   --page-width: 1142px;
-  --mobile-width: 320px;
   --gold: #fede27;
   --ink: #1e1e1e;
 }
@@ -49,6 +48,7 @@ img {
   color: #7d1111;
 }
 
+/* ── Section & Stage ── */
 .lp-section {
   position: relative;
   width: 100%;
@@ -65,6 +65,7 @@ img {
   margin: 0 auto;
 }
 
+/* ── Desktop elements (absolute) ── */
 .lp-el {
   position: absolute;
   transform-origin: top left;
@@ -109,6 +110,7 @@ img {
 
 .lp-box {
   position: absolute;
+  overflow: visible;
 }
 
 .lp-code {
@@ -257,26 +259,87 @@ img {
   right: 12px;
 }
 
-/* ── Mobile ── */
+/* ══════════════════════════════════════
+   MOBILE — Flow layout (no absolute)
+   ══════════════════════════════════════ */
 @media (max-width: 767px) {
   body {
-    background: #fff;
+    background: #1e1e1e;
   }
 
-  .lp-stage {
-    width: var(--mobile-width);
+  .lp-section.mobile {
+    height: auto !important;
+    overflow: visible;
+    padding: 24px 0;
   }
 
-  .lp-text {
-    max-width: 100%;
+  .lp-section.mobile .lp-stage {
+    width: 100%;
+    max-width: 375px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
   }
 
-  .lp-button {
-    padding: 0 10px;
+  .lp-section.mobile .lp-el {
+    position: static !important;
+    transform: none !important;
+    flex-shrink: 0;
+  }
+
+  .lp-section.mobile .lp-text {
+    width: 100%;
+    text-align: center;
+  }
+
+  .lp-section.mobile .lp-image {
+    height: auto !important;
+    border-radius: 8px;
+  }
+
+  .lp-section.mobile .lp-button {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lp-section.mobile .lp-box {
+    position: static !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+  }
+
+  .lp-section.mobile .lp-box .lp-el {
+    position: static !important;
+  }
+
+  .lp-section.mobile .lp-box .lp-image {
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0;
+  }
+
+  .lp-section.mobile .lp-box .lp-text {
+    text-align: left;
+    flex: 1;
+  }
+
+  .lp-section.mobile .lp-code {
+    position: relative !important;
+    height: 260px !important;
+    overflow: visible;
   }
 
   .portfolio-slide {
-    width: 210px;
+    width: 180px;
     max-width: none;
   }
 

@@ -51,89 +51,187 @@ function renderLandingPage() {
   startCarousel();
 }
 
+/* ═══════════════ BLOCK ═══════════════ */
 function renderBlock(block, isMobile) {
   const section = document.createElement("section");
-  const geometry = getGeometry(block, isMobile);
   section.className = "lp-section";
   section.id = block.id;
-  const sectionHeight =
-    block.id === "lp-pom-block-11" && isMobile
-      ? Math.max(geometry.size.height, 560)
-      : geometry.size.height;
-  section.style.height = `${sectionHeight}px`;
   applyBackground(section, block, isMobile);
 
   const stage = document.createElement("div");
   stage.className = "lp-stage";
   section.append(stage);
 
-  const children = getChildren(block.id);
-  children.forEach((child) => {
-    const node = renderElement(child, isMobile);
-    if (node) stage.append(node);
-  });
-
-  if (block.id === "lp-pom-block-11") {
-    stage.append(renderBudgetButton(isMobile));
+  if (isMobile) {
+    section.classList.add("mobile");
+    renderBlockMobile(stage, block);
+  } else {
+    const geometry = getGeometry(block, false);
+    section.style.height = `${geometry.size.height}px`;
+    const children = getChildren(block.id);
+    children.forEach((child) => {
+      const node = renderElementDesktop(child);
+      if (node) stage.append(node);
+    });
+    if (block.id === "lp-pom-block-11") {
+      stage.append(renderBudgetButton(false));
+    }
   }
 
   return section;
 }
 
-function renderElement(element, isMobile) {
-  const geometry = getGeometry(element, isMobile);
+/* ═══════════════ MOBILE RENDERING ═══════════════ */
+function renderBlockMobile(stage, block) {
+  const children = getChildren(block.id);
+
+  const visible = children.filter((child) => {
+    const geo = getGeometry(child, true);
+    return geo.visible;
+  });
+
+  visible.sort((a, b) => {
+    const aTop = getGeometry(a, true).offset?.top || 0;
+    const bTop = getGeometry(b, true).offset?.top || 0;
+    return aTop - bTop;
+  });
+
+  visible.forEach((child) => {
+    const node = renderElementMobile(child);
+    if (node) stage.append(node);
+  });
+
+  if (block.id === "lp-pom-block-11") {
+    stage.append(renderBudgetButton(true));
+  }
+}
+
+function renderElementMobile(element) {
+  const geometry = getGeometry(element, true);
   if (!geometry.visible) return null;
 
-  if (element.type === "lp-pom-text") return renderText(element, geometry, isMobile);
-  if (element.type === "lp-pom-image") return renderImage(element, geometry);
-  if (element.type === "lp-pom-button") return renderButton(element, geometry);
-  if (element.type === "lp-pom-box") return renderBox(element, geometry, isMobile);
-  if (element.type === "lp-code") return renderCode(element, geometry);
+  if (element.type === "lp-pom-text") return renderTextMobile(element, geometry);
+  if (element.type === "lp-pom-image") return renderImageMobile(element, geometry);
+  if (element.type === "lp-pom-button") return renderButtonMobile(element, geometry);
+  if (element.type === "lp-pom-box") return renderBoxMobile(element, geometry);
+  if (element.type === "lp-code") return renderCodeMobile(element, geometry);
   return null;
 }
 
-function renderText(element, geometry, isMobile) {
-  const text = document.createElement("div");
-  text.className = "lp-el lp-text";
-  text.id = element.id;
-  text.innerHTML = getTextHtml(element, isMobile);
-  applyGeometry(text, geometry, isMobile);
-  return text;
+function renderTextMobile(element, geometry) {
+  const div = document.createElement("div");
+  div.className = "lp-el lp-text";
+  div.id = element.id;
+  div.innerHTML = getTextHtml(element, true);
+  const w = geometry.size?.width || 0;
+  if (w > 0) div.style.maxWidth = `${Math.min(w, 320)}px`;
+  div.style.width = "100%";
+  return div;
 }
 
-function getTextHtml(element, isMobile) {
-  if (element.id === "lp-pom-text-160") {
-    if (isMobile) {
-      return (
-        '<p style="line-height: 20px; word-wrap: break-word; white-space: normal;">' +
-        '<span style="font-weight: 700; font-family: Poppins; font-size: 13px; color: rgb(255, 255, 255);">Onde estamos: </span>' +
-        '<span style="font-weight: 400; font-family: Poppins; font-size: 12px; color: rgb(255, 255, 255);">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000</span>' +
-        "</p>"
-      );
-    }
-    return (
-      '<p style="line-height: 22px; white-space: nowrap;">' +
-      '<span style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255); font-style: normal;">Onde estamos: </span>' +
-      '<span style="font-weight: 400; font-family: Poppins; font-size: 15px; color: rgb(255, 255, 255); font-style: normal;">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000, Brasil</span>' +
-      "</p>"
-    );
-  }
-
-  if (element.id === "lp-pom-text-204") {
-    return (
-      '<p style="line-height: 20px; text-align: center;">' +
-      '<span style="font-weight: 400; font-family: Poppins; font-size: ' + (isMobile ? '12' : '16') + 'px; color: rgb(0, 0, 0); font-style: normal;">2024 © Todos os direitos reservados. Desenvolvido por Prime Marble Shop</span>' +
-      "</p>"
-    );
-  }
-
-  return element.content?.text || "";
-}
-
-function renderImage(element, geometry) {
+function renderImageMobile(element, geometry) {
   const asset = element.content?.asset;
   if (!asset?.uuid || !asset?.name) return null;
 
+  const img = document.createElement("img");
+  img.className = "lp-el lp-image";
+  img.src = assetPath(asset);
+  img.alt = asset.name.replace(/\.[^.]+$/, "").replace(/-/g, " ");
+  img.loading = "lazy";
+  const w = geometry.size?.width || 300;
+  img.style.width = `${Math.min(w, 300)}px`;
+  img.style.maxWidth = "100%";
+  img.style.height = "auto";
+  return img;
+}
+
+function renderButtonMobile(element, geometry) {
+  const link = document.createElement("a");
+  link.className = "lp-el lp-button";
+  link.href = element.action?.url || "#";
+  link.target = element.action?.target || "_self";
+  link.rel = link.target === "_blank" ? "noopener" : "";
+  link.textContent = element.content?.label || "";
+  link.setAttribute("aria-label", element.content?.label || "Abrir link");
+  applyButtonStyle(link, element);
+  link.style.width = "90%";
+  link.style.maxWidth = "300px";
+  return link;
+}
+
+function renderBoxMobile(element, geometry) {
+  const box = document.createElement("div");
+  box.className = "lp-el lp-box";
+  box.style.width = "100%";
+  box.style.maxWidth = `${Math.min(geometry.size?.width || 300, 320)}px`;
+  applyBackground(box, element, true);
+
+  const border = element.style?.border;
+  if (border?.style && border.style !== "none") {
+    box.style.border = `${border.width || 1}px ${border.style} #${border.color || "ccc"}`;
+  }
+  const radius = geometry.cornerRadius ?? element.geometry?.cornerRadius;
+  if (radius) box.style.borderRadius = `${radius}px`;
+
+  const boxChildren = getChildren(element.id);
+  const visibleChildren = boxChildren.filter((c) => {
+    const cg = getGeometry(c, true);
+    return cg.visible;
+  });
+  visibleChildren.sort((a, b) => {
+    const aTop = getGeometry(a, true).offset?.top || 0;
+    const bTop = getGeometry(b, true).offset?.top || 0;
+    return aTop - bTop;
+  });
+
+  visibleChildren.forEach((child) => {
+    const node = renderElementMobile(child);
+    if (node) box.append(node);
+  });
+
+  return box;
+}
+
+function renderCodeMobile(element, geometry) {
+  const code = document.createElement("div");
+  code.className = "lp-el lp-code";
+  code.style.width = "100%";
+  code.style.height = `${geometry.size?.height || 280}px`;
+
+  if (element.id === "lp-code-268") {
+    code.append(renderCarousel());
+    return code;
+  }
+
+  code.innerHTML = element.content?.html || "";
+  return code;
+}
+
+/* ═══════════════ DESKTOP RENDERING ═══════════════ */
+function renderElementDesktop(element) {
+  const geometry = getGeometry(element, false);
+  if (!geometry.visible) return null;
+
+  if (element.type === "lp-pom-text") return renderTextDesktop(element, geometry);
+  if (element.type === "lp-pom-image") return renderImageDesktop(element, geometry);
+  if (element.type === "lp-pom-button") return renderButtonDesktop(element, geometry);
+  if (element.type === "lp-pom-box") return renderBoxDesktop(element, geometry);
+  if (element.type === "lp-code") return renderCodeDesktop(element, geometry);
+  return null;
+}
+
+function renderTextDesktop(element, geometry) {
+  const div = document.createElement("div");
+  div.className = "lp-el lp-text";
+  div.id = element.id;
+  div.innerHTML = getTextHtml(element, false);
+  applyGeometry(div, geometry);
+  return div;
+}
+
+function renderImageDesktop(element, geometry) {
+  const asset = element.content?.asset;
+  if (!asset?.uuid || !asset?.name) return null;
   const img = document.createElement("img");
   img.className = "lp-el lp-image";
   img.src = assetPath(asset);
@@ -143,7 +241,7 @@ function renderImage(element, geometry) {
   return img;
 }
 
-function renderButton(element, geometry) {
+function renderButtonDesktop(element, geometry) {
   const link = document.createElement("a");
   link.className = "lp-el lp-button";
   link.href = element.action?.url || "#";
@@ -156,6 +254,46 @@ function renderButton(element, geometry) {
   return link;
 }
 
+function renderBoxDesktop(element, geometry) {
+  const box = document.createElement("div");
+  box.className = "lp-el lp-box";
+  applyGeometry(box, geometry);
+  applyBackground(box, element, false);
+
+  const border = element.style?.border;
+  if (border?.style && border.style !== "none") {
+    box.style.border = `${border.width || 1}px ${border.style} #${border.color || "ccc"}`;
+  }
+  const radius = geometry.cornerRadius ?? element.geometry?.cornerRadius;
+  if (radius) box.style.borderRadius = `${radius}px`;
+
+  const boxChildren = getChildren(element.id);
+  boxChildren.forEach((child) => {
+    const childGeo = getGeometry(child, false);
+    if (!childGeo.visible) return;
+    const node = renderElementDesktop(child);
+    if (!node) return;
+    node.style.left = `${(childGeo.offset?.left || 0) - (geometry.offset?.left || 0)}px`;
+    node.style.top = `${(childGeo.offset?.top || 0) - (geometry.offset?.top || 0)}px`;
+    box.append(node);
+  });
+
+  return box;
+}
+
+function renderCodeDesktop(element, geometry) {
+  const code = document.createElement("div");
+  code.className = "lp-el lp-code";
+  applyGeometry(code, geometry);
+  if (element.id === "lp-code-268") {
+    code.append(renderCarousel());
+    return code;
+  }
+  code.innerHTML = element.content?.html || "";
+  return code;
+}
+
+/* ═══════════════ SHARED ═══════════════ */
 function renderBudgetButton(isMobile) {
   const link = document.createElement("a");
   link.className = "lp-el lp-button budget-button";
@@ -164,12 +302,17 @@ function renderBudgetButton(isMobile) {
   link.textContent = "Gere seu orçamento aqui";
   link.setAttribute("aria-label", "Gerar orçamento");
 
-  applyGeometry(link, {
-    offset: isMobile ? { left: 37.5, top: 472 } : { left: 405, top: 598 },
-    size: isMobile ? { width: 260, height: 42 } : { width: 331, height: 42 },
-    zIndex: 6,
-    scale: 1,
-  });
+  if (!isMobile) {
+    applyGeometry(link, {
+      offset: { left: 405, top: 598 },
+      size: { width: 331, height: 42 },
+      zIndex: 6,
+      scale: 1,
+    });
+  } else {
+    link.style.width = "90%";
+    link.style.maxWidth = "300px";
+  }
 
   link.style.backgroundColor = "#ffffff";
   link.style.color = "#000000";
@@ -178,46 +321,39 @@ function renderBudgetButton(isMobile) {
   link.style.fontWeight = "700";
   link.style.borderRadius = "5px";
   link.style.border = "0";
-
   return link;
 }
 
-function renderBox(element, geometry, isMobile) {
-  const box = document.createElement("div");
-  box.className = "lp-el lp-box";
-  applyGeometry(box, geometry);
-  applyBackground(box, element, isMobile);
-
-  const border = element.style?.border;
-  if (border?.style && border.style !== "none") {
-    box.style.border = `${border.width || 1}px ${border.style} #${border.color || "ccc"}`;
+function getTextHtml(element, isMobile) {
+  if (element.id === "lp-pom-text-160") {
+    if (isMobile) {
+      return (
+        '<p style="line-height: 20px; white-space: normal;">' +
+        '<span style="font-weight: 700; font-family: Poppins; font-size: 13px; color: rgb(255, 255, 255);">Onde estamos: </span>' +
+        '<span style="font-weight: 400; font-family: Poppins; font-size: 12px; color: rgb(255, 255, 255);">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000</span>' +
+        "</p>"
+      );
+    }
+    return (
+      '<p style="line-height: 22px; white-space: nowrap;">' +
+      '<span style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(255, 255, 255);">Onde estamos: </span>' +
+      '<span style="font-weight: 400; font-family: Poppins; font-size: 15px; color: rgb(255, 255, 255);">Estr. do Engenho, 1800 - Bangu, Rio de Janeiro - RJ, 21840-000, Brasil</span>' +
+      "</p>"
+    );
   }
 
-  const radius = geometry.cornerRadius ?? element.geometry?.cornerRadius;
-  if (radius) box.style.borderRadius = `${radius}px`;
-
-  getChildren(element.id).forEach((child) => {
-    const node = renderElement(child, isMobile);
-    if (node) box.append(node);
-  });
-
-  return box;
-}
-
-function renderCode(element, geometry) {
-  const code = document.createElement("div");
-  code.className = "lp-el lp-code";
-  applyGeometry(code, geometry);
-
-  if (element.id === "lp-code-268") {
-    code.append(renderCarousel());
-    return code;
+  if (element.id === "lp-pom-text-204") {
+    return (
+      '<p style="line-height: 20px; text-align: center;">' +
+      '<span style="font-weight: 400; font-family: Poppins; font-size: ' + (isMobile ? "12" : "16") + 'px; color: rgb(0, 0, 0);">2024 © Todos os direitos reservados. Desenvolvido por Prime Marble Shop</span>' +
+      "</p>"
+    );
   }
 
-  code.innerHTML = element.content?.html || "";
-  return code;
+  return element.content?.text || "";
 }
 
+/* ═══════════════ CAROUSEL ═══════════════ */
 function renderCarousel() {
   const carousel = document.createElement("div");
   carousel.className = "portfolio-carousel";
@@ -282,11 +418,7 @@ function startCarousel() {
   slides.forEach((slide) => {
     slide.addEventListener("click", (e) => {
       const idx = Number(slide.dataset.index);
-      if (slide.classList.contains("is-prev") || slide.classList.contains("is-far-prev")) {
-        active = idx;
-        paint();
-        e.stopPropagation();
-      } else if (slide.classList.contains("is-next") || slide.classList.contains("is-far-next")) {
+      if (!slide.classList.contains("is-active")) {
         active = idx;
         paint();
         e.stopPropagation();
@@ -319,7 +451,7 @@ function openLightbox(index) {
   const nextBtn = document.createElement("button");
   nextBtn.className = "lightbox-nav lightbox-next";
   nextBtn.textContent = "›";
-  nextBtn.setAttribute("aria-label", "Próximo");
+  nextBtn.setAttribute("aria-label", "Proximo");
 
   let current = index;
   const total = localCarouselAssets.length;
@@ -359,6 +491,7 @@ function openLightbox(index) {
   document.body.append(overlay);
 }
 
+/* ═══════════════ UTILITIES ═══════════════ */
 function getChildren(containerId) {
   return elements
     .filter((item) => item.containerId === containerId)
@@ -396,16 +529,17 @@ function getGeometry(element, isMobile) {
   };
 }
 
-function applyGeometry(node, geometry, isMobile) {
+function applyGeometry(node, geometry) {
   const left = geometry.offset?.left || 0;
   const top = geometry.offset?.top || 0;
   let width = geometry.size?.width || 0;
   const height = geometry.size?.height || 0;
 
   if (node.id === "lp-pom-text-160") {
-    width = isMobile ? 300 : Math.max(width, 700);
+    width = Math.max(width, 700);
   }
 
+  node.style.position = "absolute";
   node.style.left = `${left}px`;
   node.style.top = `${top}px`;
   node.style.width = `${width}px`;
