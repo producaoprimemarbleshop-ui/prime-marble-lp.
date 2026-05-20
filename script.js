@@ -131,12 +131,18 @@ function renderElementMobile(element) {
   return null;
 }
 
+const CHECK_ICON_IDS = new Set(["lp-pom-text-41","lp-pom-text-45","lp-pom-text-49","lp-pom-text-53","lp-pom-text-57","lp-pom-text-61"]);
+const CHECK_IMG = '<img src="./68916c6e3a49f1d8/assets/14db9f19-02cc-4314-bbb4-cd8b133a2c05/check.png" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;display:inline" />';
+
 function renderTextMobile(element, geometry) {
   const div = document.createElement("div");
   div.className = "lp-el lp-text";
   div.id = element.id;
   let html = getTextHtml(element, true);
   html = scaleFontsForMobile(html);
+  if (CHECK_ICON_IDS.has(element.id)) {
+    html = html.replace(/<span /, CHECK_IMG + '<span ');
+  }
   div.innerHTML = html;
   div.style.width = "100%";
   if (element.action?.url) {
