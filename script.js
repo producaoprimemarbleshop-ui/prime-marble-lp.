@@ -153,6 +153,7 @@ function scaleFontsForMobile(html) {
   html = html.replace(/line-height:\s*(\d+(?:\.\d+)?)px/g, (match, val) => {
     const px = parseFloat(val);
     if (px < 18) return `line-height: 1.4`;
+    if (px > 40) return `line-height: ${Math.round(px * 0.62)}px`;
     return match;
   });
   return html;
@@ -405,6 +406,11 @@ function getTextHtml(element, isMobile) {
       '<span style="font-weight: 400; font-family: Poppins; font-size: ' + (isMobile ? "12" : "16") + 'px; color: rgb(0, 0, 0);">2024 © Todos os direitos reservados. Desenvolvido por Prime Marble Shop</span>' +
       "</p>"
     );
+  }
+
+  if (element.id === "lp-pom-text-301" && isMobile) {
+    return '<p style="line-height: 28px; text-align: center;"><span style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(33, 33, 33);">Venha conhecer nosso trabalho no Instagram!</span></p>' +
+           '<p style="line-height: 28px; text-align: center;"><img src="./68916c6e3a49f1d8/assets/c2229c80-606d-44dc-91e5-35da4ca51e5e/5aa2320c-instagram.png" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;display:inline" /><a href="https://www.instagram.com/primemarbleshop/" target="_blank" style="font-weight: 700; font-family: Poppins; font-size: 16px; color: rgb(254, 222, 39); text-decoration: none;">@primemarbleshop</a></p>';
   }
 
   let html = element.content?.text || "";
