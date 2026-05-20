@@ -67,10 +67,22 @@ function renderBlock(block, isMobile) {
     renderBlockMobile(stage, block);
   } else {
     const geometry = getGeometry(block, false);
-    section.style.height = `${geometry.size.height}px`;
     const children = getChildren(block.id);
+
+    let minTop = 0;
     children.forEach((child) => {
-      const node = renderElementDesktop(child);
+      const cg = getGeometry(child, false);
+      if (cg.visible) {
+        const t = cg.offset?.top || 0;
+        if (t < minTop) minTop = t;
+      }
+    });
+    const bump = minTop < 0 ? Math.abs(minTop) : 0;
+
+    section.style.height = `${geometry.size.height + bump}px`;
+
+    children.forEach((child) => {
+      const node = renderElementDesktop(child, bump);
       if (node) stage.append(node);
     });
     if (block.id === "lp-pom-block-11") {
@@ -107,6 +119,7 @@ function renderBlockMobile(stage, block) {
 }
 
 function renderElementMobile(element) {
+  if (HIDDEN_ELEMENTS.has(element.id)) return null;
   const geometry = getGeometry(element, true);
   if (!geometry.visible) return null;
 
@@ -224,28 +237,32 @@ function renderCodeMobile(element, geometry) {
 }
 
 /* ═══════════════ DESKTOP RENDERING ═══════════════ */
-function renderElementDesktop(element) {
+const HIDDEN_ELEMENTS = new Set(["lp-pom-box-193", "lp-pom-text-272"]);
+
+function renderElementDesktop(element, topBump) {
+  if (HIDDEN_ELEMENTS.has(element.id)) return null;
   const geometry = getGeometry(element, false);
   if (!geometry.visible) return null;
+  const bump = topBump || 0;
 
-  if (element.type === "lp-pom-text") return renderTextDesktop(element, geometry);
-  if (element.type === "lp-pom-image") return renderImageDesktop(element, geometry);
-  if (element.type === "lp-pom-button") return renderButtonDesktop(element, geometry);
-  if (element.type === "lp-pom-box") return renderBoxDesktop(element, geometry);
-  if (element.type === "lp-code") return renderCodeDesktop(element, geometry);
+  if (element.type === "lp-pom-text") return renderTextDesktop(element, geometry, bump);
+  if (element.type === "lp-pom-image") return renderImageDesktop(element, geometry, bump);
+  if (element.type === "lp-pom-button") return renderButtonDesktop(element, geometry, bump);
+  if (element.type === "lp-pom-box") return renderBoxDesktop(element, geometry, bump);
+  if (element.type === "lp-code") return renderCodeDesktop(element, geometry, bump);
   return null;
 }
 
-function renderTextDesktop(element, geometry) {
+function renderTextDesktop(element, geometry, bump) {
   const div = document.createElement("div");
   div.className = "lp-el lp-text";
   div.id = element.id;
   div.innerHTML = getTextHtml(element, false);
-  applyGeometry(div, geometry);
+  applyGeometry(div, geometry, bump);
   return div;
 }
 
-function renderImageDesktop(element, geometry) {
+function renderImageDesktop(element, geometry, bump) {
   const asset = element.content?.asset;
   if (!asset?.uuid || !asset?.name) return null;
   const img = document.createElement("img");
@@ -253,11 +270,11 @@ function renderImageDesktop(element, geometry) {
   img.src = assetPath(asset);
   img.alt = asset.name.replace(/\.[^.]+$/, "").replace(/-/g, " ");
   img.loading = "eager";
-  applyGeometry(img, geometry);
+  applyGeometry(img, geometry, bump);
   return img;
 }
 
-function renderButtonDesktop(element, geometry) {
+function renderButtonDesktop(element, geometry, bump) {
   const link = document.createElement("a");
   link.className = "lp-el lp-button";
   link.href = element.action?.url || "#";
@@ -265,15 +282,15 @@ function renderButtonDesktop(element, geometry) {
   link.rel = link.target === "_blank" ? "noopener" : "";
   link.textContent = element.content?.label || "";
   link.setAttribute("aria-label", element.content?.label || "Abrir link");
-  applyGeometry(link, geometry);
+  applyGeometry(link, geometry, bump);
   applyButtonStyle(link, element);
   return link;
 }
 
-function renderBoxDesktop(element, geometry) {
+function renderBoxDesktop(element, geometry, bump) {
   const box = document.createElement("div");
   box.className = "lp-el lp-box";
-  applyGeometry(box, geometry);
+  applyGeometry(box, geometry, bump);
   applyBackground(box, element, false);
   box.style.overflow = "visible";
 
@@ -298,10 +315,10 @@ function renderBoxDesktop(element, geometry) {
   return box;
 }
 
-function renderCodeDesktop(element, geometry) {
+function renderCodeDesktop(element, geometry, bump) {
   const code = document.createElement("div");
   code.className = "lp-el lp-code";
-  applyGeometry(code, geometry);
+  applyGeometry(code, geometry, bump);
   if (element.id === "lp-code-268") {
     code.append(renderCarousel());
     return code;
@@ -316,7 +333,7 @@ function renderBudgetButton(isMobile) {
   link.className = "lp-el lp-button budget-button";
   link.href = "./orcamento/";
   link.target = "_self";
-  link.textContent = "Gere seu orçamento aqui";
+  link.textContent = "Gere seu orçamento aqui!";
   link.setAttribute("aria-label", "Gerar orçamento");
 
   if (!isMobile) {
@@ -367,7 +384,11 @@ function getTextHtml(element, isMobile) {
     );
   }
 
-  return element.content?.text || "";
+  let html = element.content?.text || "";
+  if (element.id === "lp-pom-text-137") {
+    html = '<p style="line-height: 26px; white-space: nowrap;"><span style="font-weight: 400; font-family: Poppins; font-size: 18px; color: rgb(255, 255, 255);">@primemarbleshop</span></p>';
+  }
+  return html;
 }
 
 /* ═══════════════ CAROUSEL ═══════════════ */
@@ -546,14 +567,17 @@ function getGeometry(element, isMobile) {
   };
 }
 
-function applyGeometry(node, geometry) {
+function applyGeometry(node, geometry, topBump) {
   const left = geometry.offset?.left || 0;
-  const top = geometry.offset?.top || 0;
+  const top = (geometry.offset?.top || 0) + (topBump || 0);
   let width = geometry.size?.width || 0;
   const height = geometry.size?.height || 0;
 
   if (node.id === "lp-pom-text-160") {
     width = Math.max(width, 700);
+  }
+  if (node.id === "lp-pom-text-137") {
+    width = Math.max(width, 220);
   }
 
   node.style.position = "absolute";
@@ -568,11 +592,14 @@ function applyGeometry(node, geometry) {
 }
 
 function applyBackground(node, element, isMobile) {
-  const style = isMobile
-    ? { ...(element.style || {}), ...(element.breakpoints?.mobile?.style || {}) }
-    : element.style || {};
-  const background = style.background || {};
-  const newBackground = style.newBackground || {};
+  const desktopStyle = element.style || {};
+  const mobileStyle = element.breakpoints?.mobile?.style || {};
+  const background = isMobile
+    ? { ...(desktopStyle.background || {}), ...(mobileStyle.background || {}) }
+    : desktopStyle.background || {};
+  const newBackground = isMobile
+    ? { ...(desktopStyle.newBackground || {}), ...(mobileStyle.newBackground || {}) }
+    : desktopStyle.newBackground || {};
   const solid = newBackground.solidColor?.bgColor || background.backgroundColor;
 
   if (solid) {
