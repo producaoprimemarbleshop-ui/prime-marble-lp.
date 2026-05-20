@@ -122,11 +122,21 @@ function renderTextMobile(element, geometry) {
   const div = document.createElement("div");
   div.className = "lp-el lp-text";
   div.id = element.id;
-  div.innerHTML = getTextHtml(element, true);
-  const w = geometry.size?.width || 0;
-  if (w > 0) div.style.maxWidth = `${Math.min(w, 320)}px`;
+  let html = getTextHtml(element, true);
+  html = scaleFontsForMobile(html);
+  div.innerHTML = html;
   div.style.width = "100%";
   return div;
+}
+
+function scaleFontsForMobile(html) {
+  return html.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, (match, size) => {
+    const px = parseFloat(size);
+    if (px > 32) return `font-size: ${Math.round(px * 0.55)}px`;
+    if (px > 22) return `font-size: ${Math.round(px * 0.7)}px`;
+    if (px > 16) return `font-size: ${Math.round(px * 0.85)}px`;
+    return match;
+  });
 }
 
 function renderImageMobile(element, geometry) {
@@ -255,6 +265,8 @@ function renderButtonDesktop(element, geometry) {
 }
 
 function renderBoxDesktop(element, geometry) {
+  const frag = document.createDocumentFragment();
+
   const box = document.createElement("div");
   box.className = "lp-el lp-box";
   applyGeometry(box, geometry);
@@ -267,18 +279,15 @@ function renderBoxDesktop(element, geometry) {
   const radius = geometry.cornerRadius ?? element.geometry?.cornerRadius;
   if (radius) box.style.borderRadius = `${radius}px`;
 
+  frag.append(box);
+
   const boxChildren = getChildren(element.id);
   boxChildren.forEach((child) => {
-    const childGeo = getGeometry(child, false);
-    if (!childGeo.visible) return;
     const node = renderElementDesktop(child);
-    if (!node) return;
-    node.style.left = `${(childGeo.offset?.left || 0) - (geometry.offset?.left || 0)}px`;
-    node.style.top = `${(childGeo.offset?.top || 0) - (geometry.offset?.top || 0)}px`;
-    box.append(node);
+    if (node) frag.append(node);
   });
 
-  return box;
+  return frag;
 }
 
 function renderCodeDesktop(element, geometry) {
