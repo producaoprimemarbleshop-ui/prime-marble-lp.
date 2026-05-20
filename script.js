@@ -271,12 +271,11 @@ function renderButtonDesktop(element, geometry) {
 }
 
 function renderBoxDesktop(element, geometry) {
-  const frag = document.createDocumentFragment();
-
   const box = document.createElement("div");
   box.className = "lp-el lp-box";
   applyGeometry(box, geometry);
   applyBackground(box, element, false);
+  box.style.overflow = "visible";
 
   const border = element.style?.border;
   if (border?.style && border.style !== "none") {
@@ -285,15 +284,18 @@ function renderBoxDesktop(element, geometry) {
   const radius = geometry.cornerRadius ?? element.geometry?.cornerRadius;
   if (radius) box.style.borderRadius = `${radius}px`;
 
-  frag.append(box);
-
   const boxChildren = getChildren(element.id);
   boxChildren.forEach((child) => {
+    const childGeo = getGeometry(child, false);
+    if (!childGeo.visible) return;
     const node = renderElementDesktop(child);
-    if (node) frag.append(node);
+    if (!node) return;
+    node.style.left = `${(childGeo.offset?.left || 0) - (geometry.offset?.left || 0)}px`;
+    node.style.top = `${(childGeo.offset?.top || 0) - (geometry.offset?.top || 0)}px`;
+    box.append(node);
   });
 
-  return frag;
+  return box;
 }
 
 function renderCodeDesktop(element, geometry) {
