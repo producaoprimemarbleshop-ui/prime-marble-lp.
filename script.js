@@ -130,13 +130,19 @@ function renderTextMobile(element, geometry) {
 }
 
 function scaleFontsForMobile(html) {
-  return html.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, (match, size) => {
+  html = html.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, (match, size) => {
     const px = parseFloat(size);
     if (px > 32) return `font-size: ${Math.round(px * 0.55)}px`;
     if (px > 22) return `font-size: ${Math.round(px * 0.7)}px`;
     if (px > 16) return `font-size: ${Math.round(px * 0.85)}px`;
     return match;
   });
+  html = html.replace(/line-height:\s*(\d+(?:\.\d+)?)px/g, (match, val) => {
+    const px = parseFloat(val);
+    if (px < 18) return `line-height: 1.4`;
+    return match;
+  });
+  return html;
 }
 
 function renderImageMobile(element, geometry) {
